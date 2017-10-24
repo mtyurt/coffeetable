@@ -1,0 +1,3 @@
+slackToken: 
+slackChannel:
+databasePath: resources/foo.db
