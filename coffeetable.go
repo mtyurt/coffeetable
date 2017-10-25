@@ -15,7 +15,7 @@ type UserRelation struct {
 	Encounters int
 }
 
-func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.User, []UserRelation) {
+func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.User, []UserRelation, error) {
 	users = shuffleUsers(users)
 	printUsers(users)
 	groupSizes := generateGroupSizes(len(users))
@@ -24,11 +24,16 @@ func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.Use
 		groups[i] = make([]slack.User, s)
 		baseUser := users[0]
 		wc := calculateWeightedChoices(baseUser, users[1:], relations)
-		groups[i] = calculateRandomizedGroup(wc, 3)
+		chosenNames, err := calculateRandomizedGroup(wc, s-1)
+		if err != nil {
+			return nil, nil, err
+		}
+		chosenUsers := convertNamesToUsers(users, chosenNames)
+		groups[i] = append(chosenUsers, baseUser)
 		relations = updateRelationsWithNewGroup(relations, groups[i])
 		users = deleteUsers(users, groups[i])
 	}
-	return groups, relations
+	return groups, relations, nil
 }
 func calculateWeightedChoices(baseUser slack.User, users []slack.User, relations []UserRelation) []randutil.Choice {
 	choices := make([]randutil.Choice, len(users))
@@ -54,7 +59,32 @@ func calculateWeightedChoices(baseUser slack.User, users []slack.User, relations
 	}
 	return choices
 }
-func calculateRandomizedGroup(weightedChoices []randutil.Choice, size int) []slack.User {
+func calculateRandomizedGroup(weightedChoices []randutil.Choice, size int) ([]string, error) {
+	names := make([]string, size)
+	for i := 0; i < size; i++ {
+		choice, err := randutil.WeightedChoice(weightedChoices)
+		if err != nil {
+			return nil, err
+		}
+		weightedChoices = removeChoice(weightedChoices, choice)
+		item := choice.Item
+		if n, ok := item.(string); ok {
+			names[i] = n
+		} else {
+			panic(fmt.Sprintf("Choice item is not string! It's: %v", choice))
+		}
+	}
+	return names, nil
+}
+func removeChoice(choices []randutil.Choice, tbd randutil.Choice) []randutil.Choice {
+	for i, c := range choices {
+		if c.Item == tbd.Item {
+			return append(choices[:i], choices[i+1:]...)
+		}
+	}
+	return choices
+}
+func convertNamesToUsers(users []slack.User, names []string) []slack.User {
 	return nil
 }
 func deleteUsers(from []slack.User, tbd []slack.User) []slack.User {

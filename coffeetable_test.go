@@ -57,6 +57,38 @@ func TestCalculateWeightedChoices(t *testing.T) {
 		}
 	}
 }
+func TestCalculateRandomizedGroup(t *testing.T) {
+	choices := []randutil.Choice{
+		randutil.Choice{1, "ali"},
+		randutil.Choice{1, "veli"},
+		randutil.Choice{2, "deli"},
+	}
+	subgroup, err := calculateRandomizedGroup(choices, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(subgroup) != 2 {
+		t.Fatalf("Wrong subgroup length: %d", len(subgroup))
+	}
+	if subgroup[0] == subgroup[1] {
+		t.Fatalf("Group elements should be different! Group: %v", subgroup)
+	}
+
+	possibleNames := []string{"ali", "veli", "deli"}
+	checkName := func(actual string) bool {
+		for _, expected := range possibleNames {
+			if expected == actual {
+				return true
+			}
+		}
+		return false
+	}
+	for _, actual := range subgroup {
+		if !checkName(actual) {
+			t.Fatalf("Group element is invalid: %s, should be one of: %v", actual, possibleNames)
+		}
+	}
+}
 func testEq(a, b []int) bool {
 
 	if a == nil && b == nil {
