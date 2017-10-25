@@ -18,7 +18,6 @@ type UserRelation struct {
 
 func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.User, []UserRelation, error) {
 	users = shuffleUsers(users)
-	printUsers(users)
 	groupSizes := generateGroupSizes(len(users))
 	groups := make([][]slack.User, len(groupSizes))
 	for i, s := range groupSizes {
@@ -75,7 +74,7 @@ func calculateRandomizedGroup(weightedChoices []randutil.Choice, size int) ([]st
 		if n, ok := item.(string); ok {
 			names[i] = n
 		} else {
-			panic(fmt.Sprintf("Choice item is not string! It's: %v", choice))
+			return nil, errors.New(fmt.Sprintf("Choice item is not string! It's: %v", choice))
 		}
 	}
 	return names, nil
@@ -153,13 +152,7 @@ func deleteGroupFromUsers(from []slack.User, tbd []slack.User) []slack.User {
 
 	return users
 }
-func printUsers(users []slack.User) {
-	names := make([]string, len(users))
-	for i, m := range users {
-		names[i] = m.Name
-	}
-	fmt.Println(names)
-}
+
 func generateGroupSizes(len int) []int {
 	if len <= 3 {
 		return []int{len}

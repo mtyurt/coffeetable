@@ -2,11 +2,33 @@ package coffeetable
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/jmcvetta/randutil"
 	"github.com/nlopes/slack"
 )
+
+func TestGenerateGroups(t *testing.T) {
+	inputUsers := []slack.User{slackUser("tarik"), slackUser("ali"), slackUser("veli")}
+	inputRelations := []UserRelation{
+		UserRelation{User1: "deli", User2: "ali", Encounters: 1},
+		UserRelation{User1: "deli", User2: "veli", Encounters: 1},
+		UserRelation{User1: "ali", User2: "veli", Encounters: 1},
+	}
+
+	groups, relations, err := GenerateGroups(inputRelations, inputUsers)
+	if err != nil {
+		t.Fatal("Error is not expected:", err)
+	}
+	if len(groups) != 1 && len(groups[0]) != len(inputUsers) {
+		t.Fatalf("Group lengths is wrong, 1 group and %d users expected but it was %d groups and %d users", len(inputUsers), len(groups), len(groups[0]))
+	}
+	if len(relations) != 5 {
+		t.Fatalf("Relations length is wrong, 5 relations is expected but it was %d relations: ", len(relations), relations)
+	}
+
+}
 
 func TestGenerateGroupSizes(t *testing.T) {
 	testTable := map[int][]int{
@@ -89,6 +111,13 @@ func TestCalculateRandomizedGroup(t *testing.T) {
 			t.Fatalf("Group element is invalid: %s, should be one of: %v", actual, possibleNames)
 		}
 	}
+}
+func TestCalculateRandomizedGroupFailsIfChoiceContainsNonString(t *testing.T) {
+	_, err := calculateRandomizedGroup([]randutil.Choice{randutil.Choice{1, 7}}, 2)
+	if err == nil {
+		t.Fatal("Error expected")
+	}
+
 }
 func TestConvertNamesToUsersShouldSucceed(t *testing.T) {
 	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
@@ -184,9 +213,20 @@ func TestUpdateRelationsWithNewGroup(t *testing.T) {
 		}
 	}
 }
+func TestUpdateRelationsShouldPanicWhenInputContainsDuplicateRelations(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
+	updateRelationsWithNewGroup([]UserRelation{
+		UserRelation{User1: "deli", User2: "ali", Encounters: 1},
+		UserRelation{User1: "ali", User2: "deli", Encounters: 1},
+	}, []slack.User{})
 
+	t.Errorf("The code did not panic")
+}
 func TestDeleteGroupFromUsers(t *testing.T) {
-
 	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
 	testTable := []struct {
 		input    []slack.User
