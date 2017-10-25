@@ -7,14 +7,18 @@ import (
 	ct "github.com/mtyurt/coffeetable"
 )
 
-type Repo struct {
+type repo struct {
 	db *sql.DB
+}
+type Repo interface {
+	GetUserRelations() ([]ct.UserRelation, error)
+	UpdateEncounters(ct.UserRelation) error
 }
 
 func New(db *sql.DB) Repo {
-	return Repo{db}
+	return &repo{db}
 }
-func (r *Repo) GetUserRelations() ([]ct.UserRelation, error) {
+func (r *repo) GetUserRelations() ([]ct.UserRelation, error) {
 	rows, err := r.db.Query("SELECT * FROM user_relation")
 	if err != nil {
 		return nil, err
@@ -34,7 +38,11 @@ func (r *Repo) GetUserRelations() ([]ct.UserRelation, error) {
 	return relations, nil
 }
 
-func (r *Repo) UpdateEncounters(user1 string, user2 string, encounters int) (err error) {
+func (r *repo) UpdateEncounters(rel ct.UserRelation) (err error) {
+	user1 := rel.User1
+	user2 := rel.User2
+	encounters := rel.Encounters
+
 	tx, err := r.db.Begin()
 	if err != nil {
 		return
