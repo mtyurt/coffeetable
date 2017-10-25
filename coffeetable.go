@@ -107,6 +107,10 @@ func updateRelationsWithNewGroup(relations []UserRelation, group []slack.User) [
 	relMap := make(map[string]UserRelation)
 	remainingRelations := make(map[string]UserRelation)
 	for _, r := range relations {
+		er, ok := relMap[r.User1+"|"+r.User2]
+		if ok {
+			panic(fmt.Sprintf("Relation already exists: %v\n", er))
+		}
 		remainingRelations[r.User1+"|"+r.User2] = r
 		relMap[r.User1+"|"+r.User2] = r
 		relMap[r.User2+"|"+r.User1] = r
