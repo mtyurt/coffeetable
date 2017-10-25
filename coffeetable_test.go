@@ -32,8 +32,8 @@ func TestGenerateGroupSizes(t *testing.T) {
 	}
 }
 func TestCalculateWeightedChoices(t *testing.T) {
-	users := []slack.User{slack.User{Name: "ali"}, slack.User{Name: "veli"}}
-	bs := slack.User{Name: "tarik"}
+	users := []slack.User{slackUser("ali"), slackUser("veli")}
+	bs := slackUser("tarik")
 	testTable := []struct {
 		relations []UserRelation
 		expected  []randutil.Choice
@@ -91,25 +91,25 @@ func TestCalculateRandomizedGroup(t *testing.T) {
 	}
 }
 func TestConvertNamesToUsersShouldSucceed(t *testing.T) {
-	users := []slack.User{slack.User{Name: "deli"}, slack.User{Name: "ali"}, slack.User{Name: "veli"}}
+	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
 	testTable := []struct {
-		inputNames    []string
-		expectedUsers []slack.User
+		inputNames []string
+		expected   []slack.User
 	}{
-		{[]string{"ali", "veli"}, []slack.User{slack.User{Name: "ali"}, slack.User{Name: "veli"}}},
-		{[]string{"veli", "deli"}, []slack.User{slack.User{Name: "veli"}, slack.User{Name: "deli"}}},
+		{[]string{"ali", "veli"}, []slack.User{slackUser("ali"), slackUser("veli")}},
+		{[]string{"veli", "deli"}, []slack.User{slackUser("veli"), slackUser("deli")}},
 	}
 	for _, test := range testTable {
 		actual, err := convertNamesToUsers(users, test.inputNames)
 		if err != nil {
 			t.Fatalf("Failed with error %v", err)
 		}
-		if len(actual) != len(test.expectedUsers) {
-			t.Fatalf("Expected list: %v but was: %v", test.expectedUsers, actual)
+		if len(actual) != len(test.expected) {
+			t.Fatalf("Expected: %v but was: %v", userNames(test.expected), userNames(actual))
 		}
 		for i, u := range actual {
-			if u != test.expectedUsers[i] {
-				t.Fatalf("At index %d expected: %v but was: ", i, test.expectedUsers[i], u)
+			if u != test.expected[i] {
+				t.Fatalf("At index %d expected: %v but was: ", i, test.expected[i], u)
 			}
 		}
 	}
@@ -136,7 +136,7 @@ func TestConvertNamesToUsersShouldFailWhenNameIsNotInUsers(t *testing.T) {
 }
 
 func TestUpdateRelationsWithNewGroup(t *testing.T) {
-	users := []slack.User{slack.User{Name: "deli"}, slack.User{Name: "ali"}, slack.User{Name: "veli"}}
+	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
 	testTable := []struct {
 		input    []UserRelation
 		expected []UserRelation
@@ -185,6 +185,37 @@ func TestUpdateRelationsWithNewGroup(t *testing.T) {
 	}
 }
 
+func TestDeleteGroupFromUsers(t *testing.T) {
+
+	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
+	testTable := []struct {
+		input    []slack.User
+		expected []slack.User
+	}{
+		{[]slack.User{slackUser("ali")}, []slack.User{slackUser("deli"), slackUser("veli")}},
+		{[]slack.User{slackUser("tarik")}, []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}},
+		{[]slack.User{slackUser("tarik"), slackUser("ali"), slackUser("deli")}, []slack.User{slackUser("veli")}},
+		{[]slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}, []slack.User{}},
+	}
+	for _, test := range testTable {
+		actual := deleteGroupFromUsers(users, test.input)
+		if len(actual) != len(test.expected) {
+			t.Fatalf("Expected: %v but was: %v", userNames(test.expected), userNames(actual))
+		}
+		for i, r := range test.expected {
+			if r != actual[i] {
+				t.Errorf("Index %d, expected: %v but was: %v", i, r.Name, actual[i].Name)
+			}
+		}
+	}
+}
+func userNames(users []slack.User) []string {
+	names := make([]string, len(users))
+	for i, u := range users {
+		names[i] = u.Name
+	}
+	return names
+}
 func testEq(a, b []int) bool {
 
 	if a == nil && b == nil {
@@ -206,4 +237,7 @@ func testEq(a, b []int) bool {
 	}
 
 	return true
+}
+func slackUser(name string) slack.User {
+	return slack.User{Name: name}
 }

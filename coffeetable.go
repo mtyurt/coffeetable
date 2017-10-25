@@ -35,7 +35,7 @@ func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.Use
 		}
 		groups[i] = append(chosenUsers, baseUser)
 		relations = updateRelationsWithNewGroup(relations, groups[i])
-		users = deleteUsers(users, groups[i])
+		users = deleteGroupFromUsers(users, groups[i])
 	}
 	return groups, relations, nil
 }
@@ -132,8 +132,22 @@ func updateRelationsWithNewGroup(relations []UserRelation, group []slack.User) [
 	}
 	return newRels
 }
-func deleteUsers(from []slack.User, tbd []slack.User) []slack.User {
-	return nil
+func deleteGroupFromUsers(from []slack.User, tbd []slack.User) []slack.User {
+	users := make([]slack.User, len(from))
+	for i, f := range from {
+		users[i] = f
+	}
+	for _, t := range tbd {
+	inner:
+		for i, f := range users {
+			if f.Name == t.Name {
+				users = append(users[:i], users[i+1:]...)[:len(users)-1]
+				break inner
+			}
+		}
+	}
+
+	return users
 }
 func printUsers(users []slack.User) {
 	names := make([]string, len(users))
