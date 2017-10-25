@@ -1,6 +1,7 @@
 package coffeetable
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -28,7 +29,10 @@ func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.Use
 		if err != nil {
 			return nil, nil, err
 		}
-		chosenUsers := convertNamesToUsers(users, chosenNames)
+		chosenUsers, err := convertNamesToUsers(users, chosenNames)
+		if err != nil {
+			return nil, nil, err
+		}
 		groups[i] = append(chosenUsers, baseUser)
 		relations = updateRelationsWithNewGroup(relations, groups[i])
 		users = deleteUsers(users, groups[i])
@@ -84,8 +88,20 @@ func removeChoice(choices []randutil.Choice, tbd randutil.Choice) []randutil.Cho
 	}
 	return choices
 }
-func convertNamesToUsers(users []slack.User, names []string) []slack.User {
-	return nil
+func convertNamesToUsers(users []slack.User, names []string) ([]slack.User, error) {
+	userMap := make(map[string]slack.User)
+	for _, u := range users {
+		userMap[u.Name] = u
+	}
+	subgroup := make([]slack.User, len(names))
+	for i, n := range names {
+		u, ok := userMap[n]
+		if !ok {
+			return nil, errors.New(fmt.Sprintf("Error! The user list does not have a user with name [%s]!", n))
+		}
+		subgroup[i] = u
+	}
+	return subgroup, nil
 }
 func deleteUsers(from []slack.User, tbd []slack.User) []slack.User {
 	return nil

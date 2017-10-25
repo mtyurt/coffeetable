@@ -1,6 +1,7 @@
 package coffeetable
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/jmcvetta/randutil"
@@ -88,6 +89,50 @@ func TestCalculateRandomizedGroup(t *testing.T) {
 			t.Fatalf("Group element is invalid: %s, should be one of: %v", actual, possibleNames)
 		}
 	}
+}
+func TestConvertNamesToUsersShouldSucceed(t *testing.T) {
+	users := []slack.User{slack.User{Name: "deli"}, slack.User{Name: "ali"}, slack.User{Name: "veli"}}
+	testTable := []struct {
+		inputNames    []string
+		expectedUsers []slack.User
+	}{
+		{[]string{"ali", "veli"}, []slack.User{slack.User{Name: "ali"}, slack.User{Name: "veli"}}},
+		{[]string{"veli", "deli"}, []slack.User{slack.User{Name: "veli"}, slack.User{Name: "deli"}}},
+	}
+	for _, test := range testTable {
+		actual, err := convertNamesToUsers(users, test.inputNames)
+		if err != nil {
+			t.Fatalf("Failed with error %v", err)
+		}
+		if len(actual) != len(test.expectedUsers) {
+			t.Fatalf("Expected list: %v but was: %v", test.expectedUsers, actual)
+		}
+		for i, u := range actual {
+			if u != test.expectedUsers[i] {
+				t.Fatalf("At index %d expected: %v but was: ", i, test.expectedUsers[i], u)
+			}
+		}
+	}
+}
+
+func TestConvertNamesToUsersShouldFailWhenNameIsNotInUsers(t *testing.T) {
+	testTable := []struct {
+		input    []string
+		expected error
+	}{
+		{[]string{"ali"}, errors.New("Error! The user list does not have a user with name [ali]!")},
+		{[]string{"veli", "ali"}, errors.New("Error! The user list does not have a user with name [veli]!")},
+	}
+	for _, test := range testTable {
+		_, err := convertNamesToUsers([]slack.User{}, test.input)
+		if err == nil {
+			t.Fatalf("Function should have failed!")
+		}
+		if err.Error() != test.expected.Error() {
+			t.Fatalf("Expected error: %v but was: %v |", test.expected.Error(), err.Error())
+		}
+	}
+
 }
 func testEq(a, b []int) bool {
 
