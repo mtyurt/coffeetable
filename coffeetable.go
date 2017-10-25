@@ -103,10 +103,36 @@ func convertNamesToUsers(users []slack.User, names []string) ([]slack.User, erro
 	}
 	return subgroup, nil
 }
-func deleteUsers(from []slack.User, tbd []slack.User) []slack.User {
-	return nil
-}
 func updateRelationsWithNewGroup(relations []UserRelation, group []slack.User) []UserRelation {
+	relMap := make(map[string]UserRelation)
+	remainingRelations := make(map[string]UserRelation)
+	for _, r := range relations {
+		remainingRelations[r.User1+"|"+r.User2] = r
+		relMap[r.User1+"|"+r.User2] = r
+		relMap[r.User2+"|"+r.User1] = r
+	}
+	groupSize := len(group)
+	newRels := []UserRelation{}
+	for i := 0; i < groupSize-1; i++ {
+		for j := i + 1; j < groupSize; j++ {
+			u1 := group[i]
+			u2 := group[j]
+			rel, ok := relMap[u1.Name+"|"+u2.Name]
+			if !ok {
+				rel = UserRelation{User1: u1.Name, User2: u2.Name, Encounters: 0}
+			} else {
+				delete(remainingRelations, rel.User1+"|"+rel.User2)
+			}
+			rel.Encounters++
+			newRels = append(newRels, rel)
+		}
+	}
+	for _, rel := range remainingRelations {
+		newRels = append(newRels, rel)
+	}
+	return newRels
+}
+func deleteUsers(from []slack.User, tbd []slack.User) []slack.User {
 	return nil
 }
 func printUsers(users []slack.User) {

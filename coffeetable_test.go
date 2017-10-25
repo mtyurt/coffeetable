@@ -134,6 +134,57 @@ func TestConvertNamesToUsersShouldFailWhenNameIsNotInUsers(t *testing.T) {
 	}
 
 }
+
+func TestUpdateRelationsWithNewGroup(t *testing.T) {
+	users := []slack.User{slack.User{Name: "deli"}, slack.User{Name: "ali"}, slack.User{Name: "veli"}}
+	testTable := []struct {
+		input    []UserRelation
+		expected []UserRelation
+	}{
+		{[]UserRelation{}, []UserRelation{
+			UserRelation{User1: "deli", User2: "ali", Encounters: 1},
+			UserRelation{User1: "deli", User2: "veli", Encounters: 1},
+			UserRelation{User1: "ali", User2: "veli", Encounters: 1},
+		}},
+		{[]UserRelation{
+			UserRelation{User1: "deli", User2: "ali", Encounters: 1},
+			UserRelation{User1: "deli", User2: "veli", Encounters: 1},
+			UserRelation{User1: "ali", User2: "veli", Encounters: 1},
+		}, []UserRelation{
+			UserRelation{User1: "deli", User2: "ali", Encounters: 2},
+			UserRelation{User1: "deli", User2: "veli", Encounters: 2},
+			UserRelation{User1: "ali", User2: "veli", Encounters: 2},
+		}},
+		{[]UserRelation{
+			UserRelation{User1: "tarik", User2: "veli", Encounters: 1},
+		}, []UserRelation{
+			UserRelation{User1: "deli", User2: "ali", Encounters: 1},
+			UserRelation{User1: "deli", User2: "veli", Encounters: 1},
+			UserRelation{User1: "ali", User2: "veli", Encounters: 1},
+			UserRelation{User1: "tarik", User2: "veli", Encounters: 1},
+		}},
+		{[]UserRelation{
+			UserRelation{User1: "deli", User2: "veli", Encounters: 1},
+			UserRelation{User1: "ali", User2: "veli", Encounters: 1},
+		}, []UserRelation{
+			UserRelation{User1: "deli", User2: "ali", Encounters: 1},
+			UserRelation{User1: "deli", User2: "veli", Encounters: 2},
+			UserRelation{User1: "ali", User2: "veli", Encounters: 2},
+		}},
+	}
+	for _, test := range testTable {
+		actual := updateRelationsWithNewGroup(test.input, users)
+		if len(actual) != len(test.expected) {
+			t.Fatalf("Expected: %v but was: %v", test.expected, actual)
+		}
+		for i, r := range test.expected {
+			if r != actual[i] {
+				t.Errorf("Index %d, expected: %v but was: %v", i, r, actual[i])
+			}
+		}
+	}
+}
+
 func testEq(a, b []int) bool {
 
 	if a == nil && b == nil {
