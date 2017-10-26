@@ -19,6 +19,9 @@ func New(db *sql.DB) Repo {
 	return &repo{db}
 }
 func (r *repo) GetUserRelations() ([]ct.UserRelation, error) {
+	if err := r.checkTable(); err != nil {
+		return nil, err
+	}
 	rows, err := r.db.Query("SELECT * FROM user_relation")
 	if err != nil {
 		return nil, err
@@ -38,7 +41,37 @@ func (r *repo) GetUserRelations() ([]ct.UserRelation, error) {
 	return relations, nil
 }
 
+func (r *repo) checkTable() error {
+	rows, err := r.db.Query("SELECT * FROM sqlite_master WHERE type='table';")
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		tableName := ""
+		err = rows.Scan(&tableName)
+		if err != nil {
+			return err
+		}
+		if tableName == "user_relation" {
+			return nil
+		}
+	}
+
+	_, err = r.db.Exec(`
+CREATE TABLE user_relation (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user1 VARCHAR(64) NOT NULL,
+    user2 VARCHAR(64) NOT NULL,
+    encounters INTEGER
+)
+	`)
+
+	return err
+}
 func (r *repo) UpdateEncounters(rel ct.UserRelation) (err error) {
+	if err := r.checkTable(); err != nil {
+		return err
+	}
 	user1 := rel.User1
 	user2 := rel.User2
 	encounters := rel.Encounters
