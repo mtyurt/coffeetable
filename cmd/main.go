@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"sync"
+
+	ct "github.com/mtyurt/coffeetable"
 
 	"github.com/go-yaml/yaml"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mtyurt/coffeetable/repo"
+	"github.com/mtyurt/coffeetable/slackhelper"
 	"github.com/nlopes/slack"
 )
 
@@ -18,6 +21,8 @@ type ServerConfig struct {
 	PrivateChannel bool   `yaml:"privateChannel"`
 	DatabasePath   string `yaml:"databasePath"`
 }
+
+var slackApi *slack.Client
 
 func main() {
 	if len(os.Args) < 2 {
@@ -30,14 +35,23 @@ func main() {
 		os.Exit(1)
 	}
 	db, err := sql.Open("sqlite3", conf.DatabasePath)
-	checkErr(err)
+	panicOnErr(err)
 	defer db.Close()
-	members, err := GetChannelMembers(conf)
-	checkErr(err)
-	for _, m := range members {
-		fmt.Printf("%s %25s %s\n", m.ID, m.RealName, m.Name)
+	slackService := slackhelper.New(conf.SlackToken, conf.SlackChannel, conf.PrivateChannel)
+	members, err := slackService.GetChannelMembers()
+	panicOnErr(err)
+	repo := repo.New(db)
+	relations, err := repo.GetUserRelations()
+	panicOnErr(err)
+	groups, relations, err := ct.GenerateGroups(relations, members)
+	panicOnErr(err)
+	for _, r := range relations {
+		err := repo.UpdateEncounters(r)
+		panicOnErr(err)
 	}
-	//	repo := repo.New(db)
+	err = slackService.PublishGroupsInSlack(groups)
+	panicOnErr(err)
+
 }
 func readConfig(filePath string) (conf *ServerConfig, err error) {
 	confContent, err := ioutil.ReadFile(filePath)
@@ -51,45 +65,7 @@ func readConfig(filePath string) (conf *ServerConfig, err error) {
 	}
 	return
 }
-func GetChannelMembers(conf *ServerConfig) (members []slack.User, err error) {
-	api := slack.New(conf.SlackToken)
-	var ids []string
-	if !conf.PrivateChannel {
-		chInfo, err := api.GetChannelInfo(conf.SlackChannel)
-		if err != nil {
-			return nil, err
-		}
-		ids = chInfo.Members
-	} else {
-		chInfo, err := api.GetGroupInfo(conf.SlackChannel)
-		if err != nil {
-			return nil, err
-		}
-		ids = chInfo.Members
-	}
-	members = []slack.User{}
-	wg := sync.WaitGroup{}
-	mu := sync.Mutex{}
-	wg.Add(len(ids))
-	for _, id := range ids {
-		//9 seconds improvement
-		go func(id string) {
-			userinfo, err := api.GetUserInfo(id)
-			if err != nil {
-				panic(err)
-			}
-			if !userinfo.Deleted && !userinfo.IsBot {
-				mu.Lock()
-				members = append(members, *userinfo)
-				mu.Unlock()
-			}
-			wg.Done()
-		}(id)
-	}
-	wg.Wait()
-	return
-}
-func checkErr(err error) {
+func panicOnErr(err error) {
 	if err != nil {
 		panic(err)
 	}

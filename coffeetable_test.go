@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/jmcvetta/randutil"
-	"github.com/nlopes/slack"
 )
 
 func TestGenerateGroups(t *testing.T) {
-	inputUsers := []slack.User{slackUser("tarik"), slackUser("ali"), slackUser("veli")}
+	inputUsers := []User{slackUser("tarik"), slackUser("ali"), slackUser("veli")}
 	inputRelations := []UserRelation{
 		UserRelation{User1: "deli", User2: "ali", Encounters: 1},
 		UserRelation{User1: "deli", User2: "veli", Encounters: 1},
@@ -54,7 +53,7 @@ func TestGenerateGroupSizes(t *testing.T) {
 	}
 }
 func TestCalculateWeightedChoices(t *testing.T) {
-	users := []slack.User{slackUser("ali"), slackUser("veli")}
+	users := []User{slackUser("ali"), slackUser("veli")}
 	bs := slackUser("tarik")
 	testTable := []struct {
 		relations []UserRelation
@@ -120,13 +119,13 @@ func TestCalculateRandomizedGroupFailsIfChoiceContainsNonString(t *testing.T) {
 
 }
 func TestConvertNamesToUsersShouldSucceed(t *testing.T) {
-	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
+	users := []User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
 	testTable := []struct {
 		inputNames []string
-		expected   []slack.User
+		expected   []User
 	}{
-		{[]string{"ali", "veli"}, []slack.User{slackUser("ali"), slackUser("veli")}},
-		{[]string{"veli", "deli"}, []slack.User{slackUser("veli"), slackUser("deli")}},
+		{[]string{"ali", "veli"}, []User{slackUser("ali"), slackUser("veli")}},
+		{[]string{"veli", "deli"}, []User{slackUser("veli"), slackUser("deli")}},
 	}
 	for _, test := range testTable {
 		actual, err := convertNamesToUsers(users, test.inputNames)
@@ -153,7 +152,7 @@ func TestConvertNamesToUsersShouldFailWhenNameIsNotInUsers(t *testing.T) {
 		{[]string{"veli", "ali"}, errors.New("Error! The user list does not have a user with name [veli]!")},
 	}
 	for _, test := range testTable {
-		_, err := convertNamesToUsers([]slack.User{}, test.input)
+		_, err := convertNamesToUsers([]User{}, test.input)
 		if err == nil {
 			t.Fatalf("Function should have failed!")
 		}
@@ -165,7 +164,7 @@ func TestConvertNamesToUsersShouldFailWhenNameIsNotInUsers(t *testing.T) {
 }
 
 func TestUpdateRelationsWithNewGroup(t *testing.T) {
-	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
+	users := []User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
 	testTable := []struct {
 		input    []UserRelation
 		expected []UserRelation
@@ -222,20 +221,20 @@ func TestUpdateRelationsShouldPanicWhenInputContainsDuplicateRelations(t *testin
 	updateRelationsWithNewGroup([]UserRelation{
 		UserRelation{User1: "deli", User2: "ali", Encounters: 1},
 		UserRelation{User1: "ali", User2: "deli", Encounters: 1},
-	}, []slack.User{})
+	}, []User{})
 
 	t.Errorf("The code did not panic")
 }
 func TestDeleteGroupFromUsers(t *testing.T) {
-	users := []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
+	users := []User{slackUser("deli"), slackUser("ali"), slackUser("veli")}
 	testTable := []struct {
-		input    []slack.User
-		expected []slack.User
+		input    []User
+		expected []User
 	}{
-		{[]slack.User{slackUser("ali")}, []slack.User{slackUser("deli"), slackUser("veli")}},
-		{[]slack.User{slackUser("tarik")}, []slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}},
-		{[]slack.User{slackUser("tarik"), slackUser("ali"), slackUser("deli")}, []slack.User{slackUser("veli")}},
-		{[]slack.User{slackUser("deli"), slackUser("ali"), slackUser("veli")}, []slack.User{}},
+		{[]User{slackUser("ali")}, []User{slackUser("deli"), slackUser("veli")}},
+		{[]User{slackUser("tarik")}, []User{slackUser("deli"), slackUser("ali"), slackUser("veli")}},
+		{[]User{slackUser("tarik"), slackUser("ali"), slackUser("deli")}, []User{slackUser("veli")}},
+		{[]User{slackUser("deli"), slackUser("ali"), slackUser("veli")}, []User{}},
 	}
 	for _, test := range testTable {
 		actual := deleteGroupFromUsers(users, test.input)
@@ -249,7 +248,7 @@ func TestDeleteGroupFromUsers(t *testing.T) {
 		}
 	}
 }
-func userNames(users []slack.User) []string {
+func userNames(users []User) []string {
 	names := make([]string, len(users))
 	for i, u := range users {
 		names[i] = u.Name
@@ -278,6 +277,6 @@ func testEq(a, b []int) bool {
 
 	return true
 }
-func slackUser(name string) slack.User {
-	return slack.User{Name: name}
+func slackUser(name string) User {
+	return User{Name: name}
 }

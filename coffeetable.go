@@ -9,6 +9,7 @@ import (
 	"github.com/nlopes/slack"
 )
 
+type User slack.User
 type UserRelation struct {
 	ID         int
 	User1      string
@@ -16,12 +17,12 @@ type UserRelation struct {
 	Encounters int
 }
 
-func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.User, []UserRelation, error) {
+func GenerateGroups(relations []UserRelation, users []User) ([][]User, []UserRelation, error) {
 	users = shuffleUsers(users)
 	groupSizes := generateGroupSizes(len(users))
-	groups := make([][]slack.User, len(groupSizes))
+	groups := make([][]User, len(groupSizes))
 	for i, s := range groupSizes {
-		groups[i] = make([]slack.User, s)
+		groups[i] = make([]User, s)
 		baseUser := users[0]
 		wc := calculateWeightedChoices(baseUser, users[1:], relations)
 		chosenNames, err := calculateRandomizedGroup(wc, s-1)
@@ -38,7 +39,7 @@ func GenerateGroups(relations []UserRelation, users []slack.User) ([][]slack.Use
 	}
 	return groups, relations, nil
 }
-func calculateWeightedChoices(baseUser slack.User, users []slack.User, relations []UserRelation) []randutil.Choice {
+func calculateWeightedChoices(baseUser User, users []User, relations []UserRelation) []randutil.Choice {
 	choices := make([]randutil.Choice, len(users))
 	relMap := make(map[string]int)
 	for _, r := range relations {
@@ -87,12 +88,12 @@ func removeChoice(choices []randutil.Choice, tbd randutil.Choice) []randutil.Cho
 	}
 	return choices
 }
-func convertNamesToUsers(users []slack.User, names []string) ([]slack.User, error) {
-	userMap := make(map[string]slack.User)
+func convertNamesToUsers(users []User, names []string) ([]User, error) {
+	userMap := make(map[string]User)
 	for _, u := range users {
 		userMap[u.Name] = u
 	}
-	subgroup := make([]slack.User, len(names))
+	subgroup := make([]User, len(names))
 	for i, n := range names {
 		u, ok := userMap[n]
 		if !ok {
@@ -102,7 +103,7 @@ func convertNamesToUsers(users []slack.User, names []string) ([]slack.User, erro
 	}
 	return subgroup, nil
 }
-func updateRelationsWithNewGroup(relations []UserRelation, group []slack.User) []UserRelation {
+func updateRelationsWithNewGroup(relations []UserRelation, group []User) []UserRelation {
 	relMap := make(map[string]UserRelation)
 	remainingRelations := make(map[string]UserRelation)
 	for _, r := range relations {
@@ -135,8 +136,8 @@ func updateRelationsWithNewGroup(relations []UserRelation, group []slack.User) [
 	}
 	return newRels
 }
-func deleteGroupFromUsers(from []slack.User, tbd []slack.User) []slack.User {
-	users := make([]slack.User, len(from))
+func deleteGroupFromUsers(from []User, tbd []User) []User {
+	users := make([]User, len(from))
 	for i, f := range from {
 		users[i] = f
 	}
@@ -181,8 +182,8 @@ func generateGroupSizes(len int) []int {
 	return groupSizes[:i]
 }
 
-func shuffleUsers(src []slack.User) []slack.User {
-	dest := make([]slack.User, len(src))
+func shuffleUsers(src []User) []User {
+	dest := make([]User, len(src))
 	perm := rand.Perm(len(src))
 	for i, v := range perm {
 		dest[v] = src[i]

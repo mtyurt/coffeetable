@@ -42,10 +42,11 @@ func (r *repo) GetUserRelations() ([]ct.UserRelation, error) {
 }
 
 func (r *repo) checkTable() error {
-	rows, err := r.db.Query("SELECT * FROM sqlite_master WHERE type='table';")
+	rows, err := r.db.Query("SELECT name FROM sqlite_master WHERE type='table';")
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		tableName := ""
 		err = rows.Scan(&tableName)

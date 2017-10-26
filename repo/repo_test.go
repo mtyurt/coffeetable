@@ -34,7 +34,7 @@ func TestShouldGetUsers(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "user1", "user2", "encounters"}).
 		AddRow(1, "ali", "veli", 3).
 		AddRow(2, "veli", "ahmet", 1)
-	mock.ExpectQuery("SELECT [*] FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
+	mock.ExpectQuery("SELECT name FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
 	mock.ExpectQuery("SELECT [*] FROM user_relation").WillReturnRows(rows)
 	relations, err := r.GetUserRelations()
 	if err != nil {
@@ -64,7 +64,7 @@ func TestCheckTableShouldCreateTableWhenAbsent(t *testing.T) {
 	defer db.Close()
 	r := repo{db}
 
-	mock.ExpectQuery("SELECT [*] FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}))
+	mock.ExpectQuery("SELECT name FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}))
 	mock.ExpectExec(`CREATE TABLE user_relation .*`).WillReturnResult(sqlmock.NewResult(1, 1))
 	if err = r.checkTable(); err != nil {
 		t.Fatal(err)
@@ -81,13 +81,13 @@ func TestIncreaseEncounterShouldSucceed(t *testing.T) {
 	defer db.Close()
 	r := repo{db}
 
-	mock.ExpectQuery("SELECT [*] FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
+	mock.ExpectQuery("SELECT name FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT id FROM user_relation WHERE [(] user1=[?] AND user2=[?] [)] OR [(] user2=[?] AND user1=[?] [)]").WithArgs("ali", "veli", "ali", "veli").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT INTO user_relation(.*)").WithArgs("ali", "veli", 1).WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 	//second run
-	mock.ExpectQuery("SELECT [*] FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
+	mock.ExpectQuery("SELECT name FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT id FROM user_relation WHERE [(] user1=[?] AND user2=[?] [)] OR [(] user2=[?] AND user1=[?] [)]").WithArgs("veli", "ali", "veli", "ali").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectExec("UPDATE user_relation SET encounters=[?] WHERE id=[?]").WithArgs(3, 1).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -112,7 +112,7 @@ func TestUpdateEncountersShouldRollbackWhenSqlFails(t *testing.T) {
 	defer db.Close()
 	r := repo{db}
 
-	mock.ExpectQuery("SELECT [*] FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
+	mock.ExpectQuery("SELECT name FROM sqlite_master WHERE type='table';").WillReturnRows(sqlmock.NewRows([]string{"table"}).AddRow("user_relation"))
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT id FROM user_relation WHERE [(] user1=[?] AND user2=[?] [)] OR [(] user2=[?] AND user1=[?] [)]").WithArgs("ali", "veli", "ali", "veli").WillReturnError(errors.New("query failed"))
 	mock.ExpectRollback()
