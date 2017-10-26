@@ -16,29 +16,30 @@ type SlackHelper interface {
 }
 
 type slackService struct {
-	token     string
-	channel   string
-	isPrivate bool
+	token       string
+	channel     string
+	isPrivate   bool
+	apiProvider func(token string) slackAdapter
 }
 
 func New(token string, channel string, isPrivate bool) SlackHelper {
-	return &slackService{token, channel, isPrivate}
+	return &slackService{token, channel, isPrivate, func(t string) slackAdapter {
+		return &realSlackAdapter{slack.New(t)}
+	}}
 }
 func (service *slackService) GetChannelMembers() (members []ct.User, err error) {
-	slackApi := slack.New(service.token)
+	slackApi := service.apiProvider(service.token)
 	var ids []string
 	if !service.isPrivate {
-		chInfo, err := slackApi.GetChannelInfo(service.channel)
+		ids, err = slackApi.GetChannelMembers(service.channel)
 		if err != nil {
 			return nil, err
 		}
-		ids = chInfo.Members
 	} else {
-		chInfo, err := slackApi.GetGroupInfo(service.channel)
+		ids, err = slackApi.GetGroupMembers(service.channel)
 		if err != nil {
 			return nil, err
 		}
-		ids = chInfo.Members
 	}
 	members = []ct.User{}
 	wg := sync.WaitGroup{}
@@ -64,7 +65,7 @@ func (service *slackService) GetChannelMembers() (members []ct.User, err error) 
 }
 
 func (service *slackService) PublishGroupsInSlack(groups [][]ct.User) error {
-	slackApi := slack.New(service.token)
+	slackApi := service.apiProvider(service.token)
 	text := ""
 	for i, group := range groups {
 		ids := make([]string, len(group))
@@ -75,12 +76,8 @@ func (service *slackService) PublishGroupsInSlack(groups [][]ct.User) error {
 	}
 	params := slack.PostMessageParameters{
 		AsUser: true,
-		Attachments: []slack.Attachment{
-			slack.Attachment{
-				Fallback: "Coffee time!",
-			},
-		},
+		Text:   "Coffee time!",
 	}
-	_, _, err := slackApi.PostMessage("trybot", fmt.Sprintf("Coffee time! Groups: \n%s\nZoom up!", text), params)
+	_, _, err := slackApi.PostMessage(service.channel, fmt.Sprintf("Coffee time! Today's groups: \n%s\nZoom up!", text), params)
 	return err
 }
