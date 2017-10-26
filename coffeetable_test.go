@@ -43,6 +43,7 @@ func TestGenerateGroupSizes(t *testing.T) {
 		10: []int{3, 3, 4},
 		11: []int{3, 4, 4},
 		12: []int{3, 3, 3, 3},
+		23: []int{3, 3, 3, 3, 3, 4, 4},
 	}
 
 	for input, expected := range testTable {

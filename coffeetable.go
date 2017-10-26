@@ -20,6 +20,7 @@ type UserRelation struct {
 func GenerateGroups(relations []UserRelation, users []User) ([][]User, []UserRelation, error) {
 	users = shuffleUsers(users)
 	groupSizes := generateGroupSizes(len(users))
+	fmt.Println("Group Sizes:", groupSizes)
 	groups := make([][]User, len(groupSizes))
 	for i, s := range groupSizes {
 		groups[i] = make([]User, s)

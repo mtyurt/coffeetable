@@ -40,10 +40,13 @@ func main() {
 	slackService := slackhelper.New(conf.SlackToken, conf.SlackChannel, conf.PrivateChannel)
 	members, err := slackService.GetChannelMembers()
 	panicOnErr(err)
+	fmt.Println("Channel member count:", len(members))
+	printMembers(members)
 	repo := repo.New(db)
 	relations, err := repo.GetUserRelations()
 	panicOnErr(err)
 	groups, relations, err := ct.GenerateGroups(relations, members)
+	printGroups(groups)
 	panicOnErr(err)
 	for _, r := range relations {
 		err := repo.UpdateEncounters(r)
@@ -68,5 +71,18 @@ func readConfig(filePath string) (conf *ServerConfig, err error) {
 func panicOnErr(err error) {
 	if err != nil {
 		panic(err)
+	}
+}
+func printMembers(members []ct.User) {
+	for _, u := range members {
+		fmt.Printf("%s %15s\n", u.ID, u.Name)
+	}
+}
+func printGroups(groups [][]ct.User) {
+	fmt.Println("Groups I have found:")
+	for i, g := range groups {
+		fmt.Printf("Group %d:\n", i)
+		printMembers(g)
+		fmt.Println()
 	}
 }
