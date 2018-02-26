@@ -1,2 +1,3 @@
 file1
 feature 1 continue
+ bam bam bam 
