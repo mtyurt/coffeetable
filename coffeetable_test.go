@@ -2,7 +2,6 @@ package coffeetable
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/jmcvetta/randutil"
@@ -24,7 +23,7 @@ func TestGenerateGroups(t *testing.T) {
 		t.Fatalf("Group lengths is wrong, 1 group and %d users expected but it was %d groups and %d users", len(inputUsers), len(groups), len(groups[0]))
 	}
 	if len(relations) != 5 {
-		t.Fatalf("Relations length is wrong, 5 relations is expected but it was %d relations: ", len(relations), relations)
+		t.Fatalf("Relations length is wrong, 5 relations is expected but it was %d relations: %v", len(relations), relations)
 	}
 
 }
@@ -35,21 +34,21 @@ func TestGenerateGroupSizes(t *testing.T) {
 		2:  []int{2},
 		3:  []int{3},
 		4:  []int{4},
-		5:  []int{5},
+		5:  []int{3, 2},
 		6:  []int{3, 3},
-		7:  []int{3, 4},
+		7:  []int{4, 3},
 		8:  []int{4, 4},
 		9:  []int{3, 3, 3},
-		10: []int{3, 3, 4},
-		11: []int{3, 4, 4},
-		12: []int{3, 3, 3, 3},
-		23: []int{3, 3, 3, 3, 3, 4, 4},
+		10: []int{4, 3, 3},
+		11: []int{4, 4, 3},
+		12: []int{4, 4, 4},
+		23: []int{4, 4, 4, 4, 4, 3},
 	}
 
 	for input, expected := range testTable {
 		actual := generateGroupSizes(input)
 		if !testEq(actual, expected) {
-			t.Errorf("Expected: %v but got: %v\n", expected, actual)
+			t.Errorf("For input %v Expected: %v but got: %v\n", input, expected, actual)
 		}
 	}
 }
@@ -138,7 +137,7 @@ func TestConvertNamesToUsersShouldSucceed(t *testing.T) {
 		}
 		for i, u := range actual {
 			if u != test.expected[i] {
-				t.Fatalf("At index %d expected: %v but was: ", i, test.expected[i], u)
+				t.Fatalf("At index %d expected: %v but was: %v", i, test.expected[i], u)
 			}
 		}
 	}
@@ -216,7 +215,6 @@ func TestUpdateRelationsWithNewGroup(t *testing.T) {
 func TestUpdateRelationsShouldPanicWhenInputContainsDuplicateRelations(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
 		}
 	}()
 	updateRelationsWithNewGroup([]UserRelation{

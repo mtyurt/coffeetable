@@ -155,32 +155,37 @@ func deleteGroupFromUsers(from []User, tbd []User) []User {
 	return users
 }
 
-func generateGroupSizes(len int) []int {
-	if len <= 3 {
-		return []int{len}
+const NORMAL_GROUP_SIZE = 4
+
+func generateGroupSizes(size int) []int {
+	if size <= NORMAL_GROUP_SIZE {
+		return []int{size}
 	}
-	remLen := len
-	groupSizes := make([]int, remLen/3+1)
+	remaining := size
+	groupSizes := make([]int, remaining/NORMAL_GROUP_SIZE+1)
 	i := 0
-	for remLen > 0 {
-		remLen = remLen - 3
-		if remLen >= 0 {
-			groupSizes[i] = 3
-			i++
+	for remaining >= NORMAL_GROUP_SIZE {
+		groupSizes[i] = NORMAL_GROUP_SIZE
+		i++
+		remaining = remaining - NORMAL_GROUP_SIZE
+	}
+	if remaining == 0 {
+		return groupSizes[:i]
+	}
+	groupSizes[i] = remaining
+	if i < 2 {
+		groupSizes[0] = size - size/2
+		groupSizes[1] = size / 2
+	} else {
+		j := i - 1
+		for groupSizes[i] != NORMAL_GROUP_SIZE-1 && j >= 0 {
+			groupSizes[j] = groupSizes[j] - 1
+			groupSizes[i] = groupSizes[i] + 1
+			j--
 		}
 	}
-	switch remLen {
-	case -2:
-		groupSizes[i-1] = 4
-	case -1:
-		if i > 1 {
-			groupSizes[i-1] = 4
-			groupSizes[i-2] = 4
-		} else {
-			groupSizes[i-1] = 5
-		}
-	}
-	return groupSizes[:i]
+
+	return groupSizes[:i+1]
 }
 
 func shuffleUsers(src []User) []User {
