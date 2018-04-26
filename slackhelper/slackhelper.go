@@ -76,7 +76,6 @@ func (service *slackService) PublishGroupsInSlack(groups [][]ct.User) error {
 	}
 	params := slack.PostMessageParameters{
 		AsUser: true,
-		Text:   "Coffee time!",
 	}
 	_, _, err := slackApi.PostMessage(service.channel, fmt.Sprintf("Coffee time! Today's groups: \n%s\nZoom up!", text), params)
 	return err
