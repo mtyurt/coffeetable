@@ -34,5 +34,5 @@ func (r *realSlackAdapter) GetUserInfo(user string) (*slack.User, error) {
 }
 
 func (r *realSlackAdapter) PostMessage(channel string, text string, params slack.PostMessageParameters) (string, string, error) {
-	return r.api.PostMessage(channel, text, params)
+	return r.api.PostMessage(channel, slack.MsgOptionText(text, false), slack.MsgOptionPostMessageParameters(params))
 }
